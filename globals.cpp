@@ -14,7 +14,7 @@ std::vector<Block*>* Game::getCollision( Object* q, Rect<double> cbox )
 
 const sf::Uint32 Globals::TIMESTEP = 1;
 sf::Uint32 Globals::TIMEACCUMULATOR = 0;
-const double Globals::BLOCKSIZE = 32;
+const double Globals::BLOCKSIZE = 24;
 Game* Globals::GAME = new Game;
 Object* Globals::TO = 0;
 

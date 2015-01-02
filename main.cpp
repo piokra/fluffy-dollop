@@ -90,7 +90,7 @@ int main()
 	sf::Thread thread( &renderingThread, &window );
 	thread.launch();
 	window.setKeyRepeatEnabled( false );
-
+    sf::sleep(sf::milliseconds(1000));
 	while ( window.isOpen() )
 	{
 		eventManagement( &window );
@@ -146,26 +146,55 @@ void renderingThread( sf::RenderWindow *window )
 	Globals::GAME->object = obj;
 	Globals::GAME->obj_vec = objvec;
 	objvec->add( obj );
-	obj = new Object( 300, 2100, Globals::GAME, 1000, Rect<double>( Point<double>( -Globals::BLOCKSIZE, -Globals::BLOCKSIZE ), Point<double>( Globals::BLOCKSIZE, Globals::BLOCKSIZE ) ) );
+	obj = new Object( 300, 2100, Globals::GAME->obj_vec, 1000, Rect<double>( Point<double>( -Globals::BLOCKSIZE, -Globals::BLOCKSIZE ), Point<double>( Globals::BLOCKSIZE, Globals::BLOCKSIZE ) ) );
 	objvec->add( obj );
-	timer.restart();
 
 
-	MovingWorld* mw = new MovingWorld( 500, 2000, Globals::GAME, 1, Rect<double>() );
-	mw->setPos( Point<double>( 500, 2000 ) );
-	objvec->add( mw );
-	Globals::GAME->movingworlds.push_back( mw );
+    unsigned s = 200;
+    Object* t;
+    while(s--)
+    {
 
+        Object* ob = new Object( 300+rand()%4000, 2100, Globals::GAME->obj_vec, 1000, Rect<double>( Point<double>( -Globals::BLOCKSIZE, -Globals::BLOCKSIZE ), Point<double>( Globals::BLOCKSIZE, Globals::BLOCKSIZE ) ) );
+        Globals::GAME->obj_vec->add(ob);
+        if(!(rand()%2)) delete ob;
+        if(!(rand()%45)) t=ob;
+
+
+    }
+    delete t;
+	//mw->setPos( Point<double>( 500, 2000 ) );
+	//objvec->add( mw );
+	//Globals::GAME->movingworlds.push_back( mw );
+    std::string ocounts;
+    std::string bcounts;
+    sf::Text bcount;
+    bcount.setFont( font );
+	bcount.setColor( sf::Color( 255, 255, 255 ) );
+	bcount.setPosition( window->getSize().x - 100, 50 );
+
+    sf::Text ocount;
+    ocount.setFont( font );
+	ocount.setColor( sf::Color( 255, 255, 255 ) );
+	ocount.setPosition( window->getSize().x - 100, 100 );
+    timer.restart();
+    sf::Uint32 rem =0;
 	while ( window->isOpen() )
 	{
 		sf::sleep( sf::milliseconds( 5 ) );
 		Globals::TIMEACCUMULATOR += timer.getElapsedTime().asMilliseconds();
+		rem+=Globals::TIMEACCUMULATOR%5;
+		Globals::TIMEACCUMULATOR+= rem;
+		rem=rem%5;
+		Globals::TIMEACCUMULATOR/= 5;
+        std::cout << Globals::TIMEACCUMULATOR << " " << rem << std::endl;
 		//sf::sleep(sf::milliseconds(8));
 		if( Globals::GAME->object != NULL )
 		{
 			Point<double> tpi = Globals::GAME->object->getPos();
 			xoffset = tpi.m_x - 450;
 			yoffset = tpi.m_y - 450;
+
 		}
 
 
@@ -181,15 +210,24 @@ void renderingThread( sf::RenderWindow *window )
 
 		}
 
+        timer.restart();
+        ocount.setString(tostr(Counter<Object>::getCount()));
+        bcount.setString(tostr(Counter<ShiftedBlock>::getCount()));
+
 
 
 		text.setString( text_str );
 
 		window->clear();
-		objvec->process();
+		unsigned count = Globals::TIMEACCUMULATOR;
+		while(count--)
+        {
 
-		wrld->process( xoffset + 250, yoffset + 250, 15, 15 );
+            objvec->process();
 
+            wrld->process( xoffset + 250, yoffset + 250, 15, 15 );
+
+        }
 		wrld->draw( window, xoffset, yoffset, 30, 30, Globals::BLOCKSIZE );
 		objvec->draw( window );
 
@@ -197,14 +235,15 @@ void renderingThread( sf::RenderWindow *window )
 		window->draw( text );
 		hello.drawTexts( window, 1 );
 		window->draw( uqva );
-
+        window->draw(bcount);
+        window->draw(ocount);
 		window->display();
 
-		timer.restart();
+
 
 		//sf::sleep(sf::milliseconds(8));
 
-		Globals::TIMEACCUMULATOR = Globals::TIMEACCUMULATOR - Globals::TIMEACCUMULATOR / Globals::TIMESTEP * Globals::TIMESTEP;
+		Globals::TIMEACCUMULATOR = 0;
 
 
 

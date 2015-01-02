@@ -23,6 +23,10 @@ public:
 		m_SWy = 0;
 
 	};
+	~SquareGrowingOutwards()
+	{
+
+	};
 	const int& getNEx()
 	{
 		return m_NE.size();
@@ -99,7 +103,7 @@ public:
 	};
 	void setXY( T obj, int x, int y )
 	{
-		std::cout << x << " " << y << std::endl;
+
 		if( x >= 0 )
 		{
 			//SE or NE
@@ -191,7 +195,7 @@ public:
 protected:
 	void extendByXY( std::vector<std::vector<T>>& vec, int x, int y )
 	{
-		std::cout << "Ytx:" << y << std::endl;
+
 		int newy = y;
 		int maxx;
 		int i;
@@ -203,7 +207,7 @@ protected:
 				vec.at( i ).push_back( T() );
 
 		}
-		std::cout << "Ytx:" << y << std::endl;
+
 
 		maxx = i;
 		for( i = 0; i < x; i++ )
@@ -214,6 +218,7 @@ protected:
 
 		}
 	}
+	void dtorAction() { };
 private:
 	std::vector<std::vector<T> > m_NE;
 	std::vector<std::vector<T> > m_NW;
@@ -235,5 +240,6 @@ private:
 	T m_deft;
 	int m_defi;
 };
+
 
 #endif // SQUAREGROWINGOUTWARDS_H

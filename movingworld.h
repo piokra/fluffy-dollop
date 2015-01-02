@@ -4,6 +4,7 @@
 
 #include "squaregrowingoutwards.h"
 #include "world.h"
+#include "counter.h"
 
 
 
@@ -31,7 +32,7 @@ private:
 
 };
 
-class ShiftedBlock : public Block
+class ShiftedBlock : public Block , public Counter<ShiftedBlock>
 {
 public:
 	ShiftedBlock( int x, int y, BlockHolder* parent, MovingWorld* mwparent ) : Block( x, y, parent )

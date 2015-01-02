@@ -1,8 +1,42 @@
 #include "world.h"
 #include "movingworld.h"
+#include "globals.h"
+template<> SquareGrowingOutwards<Block*>::~SquareGrowingOutwards()
+{
 
 
-MovingWorld::MovingWorld( int x, int y, Game* parent, double mass, Rect<double>cbox ) : BlockHolder(), Object( x, y, parent, mass, cbox )
+	for( unsigned i = 0; i < getNEx(); i++ )
+	{
+		for( unsigned j = 0; j < getNEy(); j++ )
+		{
+			if( m_NE.at( i ).at( j ) != 0 ) delete m_NE.at( i ).at( j );
+		}
+	}
+	for( unsigned i = 0; i < getSEx(); i++ )
+	{
+		for( unsigned j = 0; j < getSEy(); j++ )
+		{
+			if( m_SE.at( i ).at( j ) != 0 ) delete m_SE.at( i ).at( j );
+		}
+	}
+	for( unsigned i = 0; i < getSWx(); i++ )
+	{
+		for( unsigned j = 0; j < getSWy(); j++ )
+		{
+			if( m_SW.at( i ).at( j ) != 0 ) delete m_SW.at( i ).at( j );
+		}
+	}
+	for( unsigned i = 0; i < getNWx(); i++ )
+	{
+		for( unsigned j = 0; j < getNWy(); j++ )
+		{
+			if( m_NW.at( i ).at( j ) != 0 ) delete m_NW.at( i ).at( j );
+		}
+	}
+}
+
+
+MovingWorld::MovingWorld( int x, int y, Game* parent, double mass, Rect<double>cbox ) : BlockHolder(), Object( x, y, parent->obj_vec, mass, cbox )
 {
 	//ctor
 	m_sgo.setXY( new ShiftedBlock( 1, 1, this, this ), 1, 1 );

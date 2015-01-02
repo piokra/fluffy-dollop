@@ -102,10 +102,7 @@ template <class T> sf::Int8 Rect<T>::getCollision( Rect<T> rect )
 
 	Point<T> bl = rect.getCorner( BOTLEFT );
 	Point<T> tr = rect.getCorner( TOPRIGHT );
-	if ( rect == Rect<double>() )
-	{
-		std::cout << " hello tutaj jebany kwadrat \n ";
-	}
+
 
 
 

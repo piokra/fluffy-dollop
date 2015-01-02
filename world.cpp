@@ -54,8 +54,7 @@ errc World::process( int xoffset, int yoffset, int xrange, int yrange )
 {
 	int startx = xoffset / Globals::BLOCKSIZE - 1;
 	int starty = yoffset / Globals::BLOCKSIZE - 1;
-	int count = Globals::TIMEACCUMULATOR / Globals::TIMESTEP;
-	while( count-- )
+
 		for( int i = startx; i < xrange + startx + 2; i++ )
 		{
 			for( int j = starty; j < yrange + starty + 2; j++ )
@@ -87,6 +86,23 @@ errc World::draw( sf::RenderWindow* rw, int xoffset, int yoffset, int xrange, in
 		}
 	}
 	return 0;
+}
+
+
+void World::removeFromHolder(unsigned pos)
+{
+    int x, y;
+    x=pos%m_x;
+    y=pos/m_y;
+    m_blocks[x][y]=0;
+}
+
+void World::addToHolder(Block* block, unsigned x, unsigned y)
+{
+    if (m_blocks[x][y]!=0) delete m_blocks[x][y];
+    m_blocks[x][y]=block;
+    block->setVecPos(x+y*m_x);
+
 }
 
 Block** World::getNeighbours( int x, int y, Block** buffer )
@@ -144,6 +160,17 @@ std::vector<Block*>* World::getCollision( std::vector<Block*>* t_bl, Rect<double
 	return t_bl;
 }
 
+void Object::setHolderPos(unsigned pos)
+{
+    m_holderpos=pos;
+}
+
+const unsigned& Object::getHolderPos()
+{
+    return m_holderpos;
+}
+
+
 int Object::isColliding( Block* block )
 {
 	Point<double> bp = block->getPos();
@@ -188,13 +215,38 @@ void Object::resolvePartialBlockCollision( Rect<double> cbox2, Point<double> p )
 				Vector2<double> normal =  snorm.getImpulseNorm( cbox, cbox2, m_velocity + ( blocks->at( i )->getVelocity() * -1 ) );
 
 				double normalvel = dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
-				if( normalvel > 0 )
+				//Impulse
+				if( normalvel > 0.018 )
 				{
 
-					addVelocity( normal * ( -normalvel - 1 ) );
-					blocks->at( i )->addVelocity( normal * ( normalvel + 1 ) );
+					addVelocity( normal * ( -normalvel-0.4 ) );
+					blocks->at( i )->addVelocity( normal * ( normalvel+0.4) );
+                    //Torque
+                    double t = normal.m_p.m_x;
+                    normal.m_p.m_x=normal.m_p.m_y;
+                    normal.m_p.m_y=-t;
+                    normalvel=dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
 
+                    if(normalvel>0)
+                    {
+                        double forcenormal = dotProduct(normal,m_force);
+                        if(normalvel>1.5)
+                            addForce(normal*forcenormal);
+                        else
+                            addForce(normal*(-1.5)*m_mass);
+
+                    }
+                    else
+                    {
+                        normal=normal*-1;
+                        double forcenormal = dotProduct(normal,m_force);
+                        if(normalvel<-1.5)
+                            addForce(normal*forcenormal);
+                        else
+                            addForce(normal*(-1.5)*m_mass);
+                    }
 				}
+
 			}
 		}
 	}
@@ -202,7 +254,7 @@ void Object::resolvePartialBlockCollision( Rect<double> cbox2, Point<double> p )
 
 void Object::resolvePartialObjectCollision( Rect<double> cbox2, Point<double> p )
 {
-	std::vector<Object*>* objects = Globals::GAME->obj_vec->objectsInRange( p, 100000 );
+	std::vector<Object*>* objects = Globals::GAME->obj_vec->objectsInRange( p, Globals::BLOCKSIZE*4 );
 	for( int i = 0; i < objects->size(); i++ )
 	{
 
@@ -220,11 +272,53 @@ void Object::resolvePartialObjectCollision( Rect<double> cbox2, Point<double> p 
 				double normalvel = dotProduct( m_velocity + ( objects->at( i )->m_velocity * -1 ), normal );
 
 
-				if( normalvel > 0 )
+				if( normalvel > 0.018 )
 				{
 
-					addVelocity( normal * ( -normalvel - sign( normalvel ) * 3 / 4 ) );
-					objects->at( i )->addVelocity( normal * ( normalvel + sign( normalvel ) * 3 / 4 ) );
+					addVelocity( normal * ( -normalvel*0.5-0.66 ) );
+					objects->at( i )->addVelocity( normal * ( normalvel*0.5+0.66) );
+
+					//Torque
+                    double t = normal.m_p.m_x;
+                    normal.m_p.m_x=normal.m_p.m_y;
+                    normal.m_p.m_y=-t;
+                    normalvel=dotProduct( m_velocity + ( objects->at( i )->getVelocity() * -1 ), normal );
+
+                    if(normalvel>0)
+                    {
+                        double forcenormal = dotProduct(normal,m_force);
+                        if(normalvel>1.5)
+                        {
+                           addForce(normal*forcenormal);
+                            objects->at(i)->addForce(normal*forcenormal*-1);
+                        }
+                        else
+                        {
+                            addForce(normal*(-1.5)*m_mass);
+                            objects->at(i)->addForce(normal*(1.5)*m_mass);
+
+                        }
+                    }
+                    else
+                    {
+                        normal=normal*-1;
+                        double forcenormal = dotProduct(normal,m_force);
+                        if(normalvel<-1.5)
+                        {
+
+
+                            addForce(normal*forcenormal);
+                            objects->at(i)->addForce(normal*(forcenormal)*-1);
+
+                        }
+                        else
+                        {
+
+
+                            addForce(normal*(-1.5)*m_mass);
+                            objects->at(i)->addForce(normal*(1.5)*m_mass);
+                        }
+                    }
 
 				}
 
@@ -282,6 +376,7 @@ errc Object::draw( sf::RenderWindow* window )
 
 Block::Block( int x, int y, BlockHolder* parent )
 {
+    m_vecpos=-1;
 	m_parent = parent;
 	tw = 0;
 	m_x = x;
@@ -293,7 +388,7 @@ Block::Block( int x, int y, BlockHolder* parent )
 
 Block::~Block()
 {
-
+    //m_parent->removeFromHolder(getVecPos());
 }
 
 
@@ -331,8 +426,7 @@ errc Block::process()
 {
 	Block* blocks[4];
 	m_parent->getNeighbours( m_x, m_y, blocks );
-	int count = Globals::TIMEACCUMULATOR / Globals::TIMESTEP;
-	while( count-- )
+
 		for( int i = 0; i < 4; i++ )
 		{
 			if( blocks[i] != NULL )
@@ -356,6 +450,17 @@ errc Block::process()
 
 
 }
+
+void Block::setVecPos(unsigned i)
+{
+    m_vecpos=i;
+}
+
+const unsigned& Block::getVecPos()
+{
+    return m_vecpos;
+}
+
 
 float Block::gettw()
 {

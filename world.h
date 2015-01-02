@@ -46,8 +46,9 @@ enum Phase
 class Block : public Counter<Block>
 {
 public:
+	friend class World;
 	Block( int x, int y, BlockHolder* parent );
-	~Block();
+	virtual ~Block();
 	virtual errc draw( sf::RenderWindow* rw, int, int, int );
 	virtual errc process();
 	Phase getPhase()
@@ -86,10 +87,13 @@ public:
 		return 0;
 	};
 protected:
+	void setVecPos( unsigned i );
+	const unsigned& getVecPos();
 private:
 	sf::Color m_color;
 	int m_x;
 	int m_y;
+	unsigned m_vecpos;
 	float tw;
 	BlockHolder* m_parent;
 
@@ -106,7 +110,7 @@ public:
 	{
 		m_parent = parent;
 	};
-	~ObjectHolder()
+	virtual ~ObjectHolder()
 	{
 
 	};
@@ -114,9 +118,19 @@ public:
 	{
 		return NULL;
 	}; // use sparingly
-	virtual errc process() { };
-	virtual errc draw( sf::RenderWindow* ) { };
-	virtual errc add( Object* ) { };
+	virtual errc process()
+	{
+		return -1;
+	};
+	virtual errc draw( sf::RenderWindow* )
+	{
+		return -1;
+	};
+	virtual errc add( Object* )
+	{
+		return -1;
+	};
+	virtual void removeFromPos( unsigned pos ) { };
 
 protected:
 private:
@@ -139,27 +153,35 @@ public:
 	};
 	virtual Block* getBlock( int x, int y )
 	{
-		printf( "Pure fagvirutal function called\n" );
+		//printf( "Pure fagvirutal function called\n" );
 		return NULL;
 	};
 	virtual Block** getNeighbours( int x, int y, Block* buffer[4] )
 	{
-		printf( "Pure virutal function called\n" );
+		//printf( "Pure virutal function called\n" );
 		return NULL;
 	};
 	virtual std::vector<Block*>* getCollision( Object* obj )
 	{
+		std::cout << "BH::getCollision\n";
 		return NULL;
 	};
 	virtual Game* getParent()
 	{
-
+		std::cout << "BH::getParent\n";
 	};
 	virtual std::vector<Block*>* getCollision( Rect<double> rect )
 	{
-
+		std::cout << "BH::getCollision\n";
 	};
-
+	virtual void removeFromHolder( unsigned pos )
+	{
+		std::cout << "BH::removeFromHolder\n";
+	};
+	virtual void addToHolder( Block* block, unsigned x, unsigned y )
+	{
+		std::cout << "BH::addToHolder\n";
+	};
 };
 
 
@@ -169,7 +191,6 @@ public:
 	World( Game* parent, ui x, ui y );
 	~World();
 	virtual Block* getBlock( int x, int y );
-	virtual Block** getNeighbours( int x, int y, Block* buffer[4] );
 	errc draw( sf::RenderWindow* rw, int, int, int, int, int );
 	errc process( int, int, int, int );
 	std::vector<Block*>* getCollision( Object* obj );
@@ -179,7 +200,9 @@ public:
 	}
 	virtual std::vector<Block*>* getCollision( Rect<double> rect );
 	virtual std::vector<Block*>* getCollision( std::vector<Block*>* t_bl, Rect<double> rect );
-
+	virtual Block** getNeighbours( int x, int y, Block** buffer );
+	virtual void removeFromHolder( unsigned pos );
+	virtual void addToHolder( Block* block, unsigned x, unsigned y );
 protected:
 	std::vector<Block*>* getMtbl();
 private:
@@ -193,10 +216,12 @@ private:
 class Object : public Counter<Object>
 {
 public:
+	friend class ObjectVector;
 	friend class Object;
 	friend class Hero;
-	Object( int x, int y, Game* parent, double mass, Rect<double> bounds )
+	Object( int x, int y, ObjectHolder* parent, double mass, Rect<double> bounds )
 	{
+	    m_holderpos=-1;
 		m_acceleration = Vector2<double>( 0, 0 );
 		m_velocity = Vector2<double>( 0, 0 );
 		m_p = Point<double>( x, y );
@@ -209,7 +234,7 @@ public:
 	};
 	virtual ~Object()
 	{
-
+        m_parent->removeFromPos(getHolderPos());
 	};
 	virtual errc draw( sf::RenderWindow* window );
 
@@ -281,10 +306,12 @@ protected:
 	virtual void resolvePartialBlockCollision( Rect<double> cbox, Point<double> );
 
 	virtual void resolvePartialObjectCollision( Rect<double> cbox, Point<double> );
-
+	void setHolderPos( unsigned pos );
+	const unsigned& getHolderPos();
 private:
+	unsigned m_holderpos;
 	Rect<double> m_cbox;
-	Game* m_parent;
+	ObjectHolder* m_parent;
 	double m_mass;
 	double m_invmass;
 	Point<double> m_p;
@@ -304,8 +331,7 @@ public:
 	} ;
 	virtual errc process ()
 	{
-		int count = Globals::TIMEACCUMULATOR / Globals::TIMESTEP;
-		while( count-- )
+
 			for( int i = 0; i < m_objects.size(); i++ )
 			{
 				if( m_objects.at( i ) != NULL ) m_objects.at( i )->process();
@@ -323,6 +349,7 @@ public:
 	virtual errc add( Object* obj )
 	{
 		m_objects.push_back( obj );
+		obj->setHolderPos( m_objects.size() - 1 );
 		return 0;
 	};
 	virtual std::vector<Object*>* objectsInRange( Point<double> center, double r )
@@ -348,7 +375,18 @@ public:
 
 		return &m_t_obj;
 	}
-	~ObjectVector();
+	virtual void removeFromPos( unsigned pos )
+	{
+	    if (pos==-1) return;
+		Object* t = m_objects.at( pos );
+		m_objects.at( pos ) = m_objects.at( m_objects.size() - 1 );
+		if ( m_objects.at( pos ) ) m_objects.at( pos )->setHolderPos( pos );
+		m_objects.pop_back();
+	};
+	virtual ~ObjectVector()
+	{
+		for( unsigned i = 0; i < m_objects.size(); i++ ) if ( m_objects.at( i ) != 0 ) delete m_objects.at( i );
+	};
 protected:
 private:
 
