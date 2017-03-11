@@ -16,7 +16,7 @@ struct normals
 	{
 		selectNormals( left, right, bot, top );
 	}
-	Vector2<double> getImpulseNorm( Rect<double> staticrect, Rect<double> penrect, Vector2<double> vel );
+	Vector2<float> getImpulseNorm( Rect<float> staticrect, Rect<float> penrect, Vector2<float> vel );
 	void selectNormals( bool left, bool right, bool bot, bool top )
 	{
 		m_norms = 0;
@@ -33,7 +33,7 @@ class normal
 {
 public:
 
-	static double getPenetration( Vector2<double> norm, Rect<double> staticrect, Rect<double> penrect, Vector2<double>vel );
+	static float getPenetration( Vector2<float> norm, Rect<float> staticrect, Rect<float> penrect, Vector2<float>vel );
 };
 
 

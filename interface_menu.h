@@ -3,7 +3,7 @@
 
 
 #include "bg.h"
-
+extern sf::Font font;
 enum ButtonState
 {
 	BS_None,
@@ -22,17 +22,22 @@ enum PositionType
 class Button
 {
 public:
-	Button( double x, double y, double xx, double yy, std::string text, PositionType  ptype )
+	Button( float x, float y, float xx, float yy, std::string text, PositionType  ptype )
 	{
 		m_text = text;
 		if( ptype == PT_Constant ) m_box = Rect<int>( Point<int>( ( int )x, ( int )y ), Point<int>( ( int )xx, ( int )yy ) );
 	};
 	~Button() { };
-	void click( Point<int> pos )
+	bool click( Point<int> pos )
 	{
-		if( m_box.getCollision( pos ) ) clickAction();
+		if( m_box.getCollision( pos ) )
+		{
+			clickAction();
+			return true;
+		}
+		return false;
 	};
-	void mousepos( Point<int> pos )
+	bool mousepos( Point<int> pos )
 	{
 		if( m_box.getCollision( pos ) )
 		{
@@ -42,10 +47,12 @@ public:
 		{
 			if( m_state == BS_Selected ) mouseOutAction();
 		}
+		return false;
 	};
-	void unclick()
+	bool unclick()
 	{
 		unclickAction();
+		return false;
 	};
 	virtual void clickAction() { };
 	virtual void unclickAction() { };
@@ -59,13 +66,17 @@ public:
 	};
 	virtual void draw( sf::RenderWindow* window )
 	{
-
+		sf::Text text;
+		text.setString( m_text );
+		text.setFont( font );
+		text.setPosition( m_box.getCorner( BOTLEFT ).m_x + 10, m_box.getCorner( BOTLEFT ).m_y + 10 );
 		sf::RectangleShape rekt( sf::Vector2f( m_box.getCorner( TOPRIGHT ).m_x - m_box.getCorner( BOTLEFT ).m_x, m_box.getCorner( TOPRIGHT ).m_y - m_box.getCorner( BOTLEFT ).m_y ) );
 		rekt.setPosition( m_box.getCorner( BOTLEFT ).m_x, m_box.getCorner( BOTLEFT ).m_y );
-		rekt.setFillColor( sf::Color( 255, 0, 0 ) );
+		rekt.setFillColor( sf::Color( 255, 122, 122 ) );
 		if( m_state == BS_Selected )
-			rekt.setFillColor( sf::Color( 0, 255, 0 ) );
+			rekt.setFillColor( sf::Color( 122, 255, 122 ) );
 		window->draw( rekt );
+		window->draw( text );
 	};
 	virtual void process() { }
 
@@ -76,51 +87,6 @@ private:
 	Rect<int> m_box;
 
 };
-
-class Menu
-{
-public:
-	Menu()
-	{
-
-	};
-	~Menu()
-	{
-
-	};
-	void draw( sf::RenderWindow* window )
-	{
-		for( int i = 0; i < m_buttons.size(); i++ )
-		{
-			m_buttons.at( i )->draw( window );
-		}
-	}
-	void mousepos( Point<int> pos )
-	{
-		for( int i = 0; i < m_buttons.size(); i++ )
-		{
-			m_buttons.at( i )->mousepos( pos );
-		}
-	}
-	void click( Point<int> pos )
-	{
-		for( int i = 0; i < m_buttons.size(); i++ )
-		{
-			m_buttons.at( i )->click( pos );
-		}
-	}
-	void add( Button* but )
-	{
-		m_buttons.push_back( but );
-	}
-
-
-protected:
-private:
-	std::vector<Button*> m_buttons;
-};
-
-
 
 
 

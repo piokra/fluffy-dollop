@@ -7,9 +7,14 @@
 #include <math.h>
 #include "world.h"
 #include "normals.h"
-
-
-
+#include "globals.h"
+#include "uqva.h"
+#include "itempickup.h"
+#include "items.h"
+#include "projectileemitter.h"
+#include <fstream>
+#include "movingworld.h"
+#include "worldgenerator.h"
 
 World::World( Game* parent, ui x, ui y )
 {
@@ -29,6 +34,7 @@ World::World( Game* parent, ui x, ui y )
 		for( ui j = 0; j < y; j++ )
 		{
 			m_blocks[i][j] = new Block( i, j, this );
+			m_blocks[i][j]->setVecPos( i + j * y );
 		}
 	}
 
@@ -55,14 +61,14 @@ errc World::process( int xoffset, int yoffset, int xrange, int yrange )
 	int startx = xoffset / Globals::BLOCKSIZE - 1;
 	int starty = yoffset / Globals::BLOCKSIZE - 1;
 
-		for( int i = startx; i < xrange + startx + 2; i++ )
+	for( int i = startx; i < xrange + startx + 2; i++ )
+	{
+		for( int j = starty; j < yrange + starty + 2; j++ )
 		{
-			for( int j = starty; j < yrange + starty + 2; j++ )
-			{
-				if( i > 0 && j > 0 && i < m_x && j < m_y )
-					m_blocks[i][j]->process();
-			}
+			if( i > 0 && j > 0 && i < m_x && j < m_y )
+				m_blocks[i][j]->process();
 		}
+	}
 	return 0;
 }
 
@@ -72,36 +78,36 @@ Block* World::getBlock( int x, int y )
 	return NULL;
 }
 
-errc World::draw( sf::RenderWindow* rw, int xoffset, int yoffset, int xrange, int yrange, int bs )
+errc World::draw( UQVA* uqva, int xoffset, int yoffset, int xrange, int yrange, int bs )
 {
 	int startx = xoffset / bs - 1;
 	int starty = yoffset / bs - 1;
-	for( int i = startx; i < xrange + startx + 2; i++ )
+	for( int i = -xrange / 2; i < xrange + 2; i++ )
 	{
-		for( int j = starty; j < yrange + starty + 2; j++ )
+		for( int j = -yrange / 2; j < yrange + 2; j++ )
 		{
 
-			if( i >= 0 && j >= 0 && i < m_x && j < m_y )
-				m_blocks[i][j]->draw( rw, -xoffset, -yoffset, bs );
+			if( i + startx >= 0 && j + starty >= 0 && i + startx < m_x && j + starty < m_y )
+				m_blocks[i + startx][j + starty]->draw( uqva, 0, 0, bs );
 		}
 	}
 	return 0;
 }
 
 
-void World::removeFromHolder(unsigned pos)
+void World::removeFromHolder( unsigned pos )
 {
-    int x, y;
-    x=pos%m_x;
-    y=pos/m_y;
-    m_blocks[x][y]=0;
+	int x, y;
+	x = pos % m_y;
+	y = pos / m_y;
+	m_blocks[x][y] = 0;
 }
 
-void World::addToHolder(Block* block, unsigned x, unsigned y)
+void World::addToHolder( Block* block, unsigned x, unsigned y )
 {
-    if (m_blocks[x][y]!=0) delete m_blocks[x][y];
-    m_blocks[x][y]=block;
-    block->setVecPos(x+y*m_x);
+	if ( m_blocks[x][y] != 0 ) delete m_blocks[x][y];
+	m_blocks[x][y] = block;
+	block->setVecPos( x + y * m_x );
 
 }
 
@@ -123,20 +129,20 @@ std::vector<Block*>* World::getMtbl()
 {
 	return m_t_bl;
 }
-std::vector<Block*>* World::getCollision( Rect<double> cbox )
+std::vector<Block*>* World::getCollision( Rect<float> cbox )
 {
 	m_t_bl->clear();
 	return getCollision( m_t_bl, cbox );
 }
-std::vector<Block*>* World::getCollision( std::vector<Block*>* t_bl, Rect<double> cbox )
+std::vector<Block*>* World::getCollision( std::vector<Block*>* t_bl, Rect<float> cbox )
 {
 
-	double bs = Globals::BLOCKSIZE;
-	double xmin = cbox.getCorner( BOTLEFT ).m_x / bs;
-	double ymin = cbox.getCorner( BOTLEFT ).m_y / bs;
+	float bs = Globals::BLOCKSIZE;
+	float xmin = cbox.getCorner( BOTLEFT ).m_x / bs;
+	float ymin = cbox.getCorner( BOTLEFT ).m_y / bs;
 
-	double xmax = cbox.getCorner( TOPRIGHT ).m_x;
-	double ymax = cbox.getCorner( TOPRIGHT ).m_y;
+	float xmax = cbox.getCorner( TOPRIGHT ).m_x;
+	float ymax = cbox.getCorner( TOPRIGHT ).m_y;
 
 	if( xmax == 0 || ymax == 0 ) return t_bl;
 
@@ -159,33 +165,41 @@ std::vector<Block*>* World::getCollision( std::vector<Block*>* t_bl, Rect<double
 
 	return t_bl;
 }
-
-void Object::setHolderPos(unsigned pos)
+unsigned Object::getID()
 {
-    m_holderpos=pos;
+	return 0;
+}
+unsigned Block::getID()
+{
+	return 0;
+}
+
+void Object::setHolderPos( unsigned pos )
+{
+	m_holderpos = pos;
 }
 
 const unsigned& Object::getHolderPos()
 {
-    return m_holderpos;
+	return m_holderpos;
 }
 
 
 int Object::isColliding( Block* block )
 {
-	Point<double> bp = block->getPos();
+	Point<float> bp = block->getPos();
 	bp.m_x = bp.m_x * Globals::BLOCKSIZE;
 	bp.m_y = bp.m_y * Globals::BLOCKSIZE;
-	Rect<double> col = Rect<double>( bp, bp + Point<double>( Globals::BLOCKSIZE, Globals::BLOCKSIZE ) );
+	Rect<float> col = Rect<float>( bp, bp + Point<float>( Globals::BLOCKSIZE, Globals::BLOCKSIZE ) );
 	return getCbox().getCollision( col );
 }
 void Object::applyVelocity()
 {
-	double tp = static_cast<double>( Globals::TIMESTEP ) * 0.1;
-	double dxd = m_velocity.m_p.m_x * tp;
-	double dyd = m_velocity.m_p.m_y * tp;
+	float tp = static_cast<float>( Globals::TIMESTEP ) * 0.1;
+	float dxd = m_velocity.m_p.m_x * tp;
+	float dyd = m_velocity.m_p.m_y * tp;
 
-	m_p = m_p + Point<double>( dxd, dyd );
+	m_p = m_p + Point<float>( dxd, dyd );
 
 
 }
@@ -199,7 +213,7 @@ void Object::resolveObjectCollision()
 	resolvePartialObjectCollision( getCbox(), m_p );
 }
 
-void Object::resolvePartialBlockCollision( Rect<double> cbox2, Point<double> p )
+void Object::resolvePartialBlockCollision( Rect<float> cbox2, Point<float> p )
 {
 	std::vector<Block*>* blocks = Globals::GAME->getCollision( this, cbox2 );
 	for( int i = 0; i < blocks->size(); i++ )
@@ -208,43 +222,44 @@ void Object::resolvePartialBlockCollision( Rect<double> cbox2, Point<double> p )
 		{
 			if( blocks->at( i )->getPhase() == SOLID )
 			{
-				Point<double> point = blocks->at( i )->getPos();
-				Rect<double> cbox = blocks->at( i )->getCbox();
+				onCollision( blocks->at( i ) );
+				Point<float> point = blocks->at( i )->getPos();
+				Rect<float> cbox = blocks->at( i )->getCbox();
 
 				normals snorm = blocks->at( i )->getAvailNormals();
-				Vector2<double> normal =  snorm.getImpulseNorm( cbox, cbox2, m_velocity + ( blocks->at( i )->getVelocity() * -1 ) );
+				Vector2<float> normal =  snorm.getImpulseNorm( cbox, cbox2, m_velocity + ( blocks->at( i )->getVelocity() * -1 ) );
 
-				double normalvel = dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
+				float normalvel = dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
 				//Impulse
-				if( normalvel > 0.018 )
+				if( normalvel > 0.000 )
 				{
 
-					addVelocity( normal * ( -normalvel-0.4 ) );
-					blocks->at( i )->addVelocity( normal * ( normalvel+0.4) );
-                    //Torque
-                    double t = normal.m_p.m_x;
-                    normal.m_p.m_x=normal.m_p.m_y;
-                    normal.m_p.m_y=-t;
-                    normalvel=dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
+					addVelocity( normal * ( -normalvel - 0.6f ) );
+					blocks->at( i )->addVelocity( normal * ( normalvel + 0.4 ) );
+					//Torque
 
-                    if(normalvel>0)
-                    {
-                        double forcenormal = dotProduct(normal,m_force);
-                        if(normalvel>1.5)
-                            addForce(normal*forcenormal);
-                        else
-                            addForce(normal*(-1.5)*m_mass);
+					float forcenormal = -0.1 * dotProduct( m_force, normal );
+					float t = normal.m_p.m_x;
+					normal.m_p.m_x = normal.m_p.m_y;
+					normal.m_p.m_y = -t;
+					normalvel = dotProduct( m_velocity + ( blocks->at( i )->getVelocity() * -1 ), normal );
+					;
+					if( normalvel > 0 )
+					{
 
-                    }
-                    else
-                    {
-                        normal=normal*-1;
-                        double forcenormal = dotProduct(normal,m_force);
-                        if(normalvel<-1.5)
-                            addForce(normal*forcenormal);
-                        else
-                            addForce(normal*(-1.5)*m_mass);
-                    }
+						addVelocity( normal * forcenormal * m_invmass );
+
+						//addVelocity( normal * ( -0.15 ) );
+
+					}
+					else
+					{
+						normal = normal * -1;
+
+						addVelocity( normal * forcenormal * m_invmass );
+
+					}
+					//if( abs( m_velocity.m_p.m_x ) < 0.15 ) m_velocity.m_p.m_x = 0;
 				}
 
 			}
@@ -252,73 +267,33 @@ void Object::resolvePartialBlockCollision( Rect<double> cbox2, Point<double> p )
 	}
 }
 
-void Object::resolvePartialObjectCollision( Rect<double> cbox2, Point<double> p )
+void Object::resolvePartialObjectCollision( Rect<float> cbox2, Point<float> p )
 {
-	std::vector<Object*>* objects = Globals::GAME->obj_vec->objectsInRange( p, Globals::BLOCKSIZE*4 );
+	std::vector<Object*>* objects = Globals::GAME->col_vec->objectsInRange( p, Globals::BLOCKSIZE * 4 );
 	for( int i = 0; i < objects->size(); i++ )
 	{
 
 		if( objects->at( i ) != NULL )
 		{
-			if( cbox2.getCollision( objects->at( i )->getCbox() ) && objects->at( i ) != this && objects->at( i )->resolveCollision() )
+
+			if( cbox2.getCollision( objects->at( i )->getCbox() ) && objects->at( i ) != this  )
 			{
-
-
-				Point<double> point = objects->at( i )->getPos();
-				Rect<double> cbox = objects->at( i )->getCbox();
+				onCollision( objects->at( i ) );
+				if ( !objects->at( i )->resolveCollision() ) continue;
+				Point<float> point = objects->at( i )->getPos();
+				Rect<float> cbox = objects->at( i )->getCbox();
 				normals snorm;
 				snorm.selectNormals( 1, 1, 1, 1 );
-				Vector2<double> normal =  snorm.getImpulseNorm( cbox, cbox2, m_velocity + ( objects->at( i )->m_velocity * -1 ) );
-				double normalvel = dotProduct( m_velocity + ( objects->at( i )->m_velocity * -1 ), normal );
+				Vector2<float> normal =  snorm.getImpulseNorm( cbox, cbox2, m_velocity + ( objects->at( i )->m_velocity * -1 ) );
+				float normalvel = dotProduct( m_velocity + ( objects->at( i )->m_velocity * -1 ), normal );
 
 
-				if( normalvel > 0.018 )
+				if( normalvel > 0 )
 				{
 
-					addVelocity( normal * ( -normalvel*0.5-0.66 ) );
-					objects->at( i )->addVelocity( normal * ( normalvel*0.5+0.66) );
+					addVelocity( normal * ( -normalvel * 0.5 - 0.66 ) );
+					objects->at( i )->addVelocity( normal * ( normalvel * 0.5 + 0.66 ) );
 
-					//Torque
-                    double t = normal.m_p.m_x;
-                    normal.m_p.m_x=normal.m_p.m_y;
-                    normal.m_p.m_y=-t;
-                    normalvel=dotProduct( m_velocity + ( objects->at( i )->getVelocity() * -1 ), normal );
-
-                    if(normalvel>0)
-                    {
-                        double forcenormal = dotProduct(normal,m_force);
-                        if(normalvel>1.5)
-                        {
-                           addForce(normal*forcenormal);
-                            objects->at(i)->addForce(normal*forcenormal*-1);
-                        }
-                        else
-                        {
-                            addForce(normal*(-1.5)*m_mass);
-                            objects->at(i)->addForce(normal*(1.5)*m_mass);
-
-                        }
-                    }
-                    else
-                    {
-                        normal=normal*-1;
-                        double forcenormal = dotProduct(normal,m_force);
-                        if(normalvel<-1.5)
-                        {
-
-
-                            addForce(normal*forcenormal);
-                            objects->at(i)->addForce(normal*(forcenormal)*-1);
-
-                        }
-                        else
-                        {
-
-
-                            addForce(normal*(-1.5)*m_mass);
-                            objects->at(i)->addForce(normal*(1.5)*m_mass);
-                        }
-                    }
 
 				}
 
@@ -334,79 +309,230 @@ bool Object::resolveCollision()
 
 void Object::addAcceleration()
 {
-	double tp = Globals::TIMESTEP * 0.1;
-	double dxd = m_acceleration.m_p.m_x * tp;
-	double dyd = m_acceleration.m_p.m_y * tp;
-	m_velocity = m_velocity + Vector2<double>( dxd, dyd );
+	float tp = Globals::TIMESTEP * 0.1;
+	float dxd = m_acceleration.m_p.m_x * tp;
+	float dyd = m_acceleration.m_p.m_y * tp;
+	m_velocity = m_velocity + Vector2<float>( dxd, dyd );
 
 }
 
+bool Object::isDead()
+{
+	return m_dead;
+}
+
+void Object::kill()
+{
+	m_dead = true;
+}
 errc Object::process()
 {
 
+
+	float dist = ( m_p.m_x - xoffset ) * ( m_p.m_x - xoffset ) + ( m_p.m_y - yoffset ) * ( m_p.m_y - yoffset );
+	if( dist > Globals::REMOVEDISTANCE ) kill();
+
+	if ( isDead() )
+	{
+		onDeath();
+		return 0;
+	}
+	onProcess();
 	processPhysics();
 	countAcceleration();
 	addAcceleration();
 
 	applyVelocity();
-	m_force = Vector2<double>( 0, 0 );
-	m_acceleration = Vector2<double>( 0, 0 );
+
 	resolveBlockCollision();
 	resolveObjectCollision();
 
 
-
+	m_force = Vector2<float>( 0, 0 );
+	m_acceleration = Vector2<float>( 0, 0 );
 
 
 	return 0;
 }
 
-errc Object::draw( sf::RenderWindow* window )
+const unsigned& Object::getCVPos()
+{
+	return m_cvpos;
+}
+
+void Object::setCVPos( unsigned pos )
+{
+	m_cvpos = pos;
+}
+
+void Block::onCollision( Object* obj )
 {
 
-	sf::RectangleShape rekt( sf::Vector2f( m_cbox.getCorner( TOPRIGHT ).m_x - m_cbox.getCorner( BOTLEFT ).m_x, m_cbox.getCorner( TOPRIGHT ).m_y - m_cbox.getCorner( BOTLEFT ).m_y ) );
-	rekt.setFillColor( sf::Color( 0, 255, 100 ) );
-	rekt.setPosition( m_p.m_x - xoffset + m_cbox.getCorner( BOTLEFT ).m_x, m_p.m_y - yoffset + m_cbox.getCorner( BOTLEFT ).m_y );
-	window->draw( rekt );
-	inrange = 0;
+}
+
+void Block::onCollision( Block* block )
+{
+
+}
+void Object::setCParent( ObjectHolder* cparent )
+{
+	m_cparent = cparent;
+}
+
+ObjectHolder* Object::getCVparent()
+{
+	return m_cparent;
+}
+
+
+void Object::onProcess()
+{
+
+}
+
+void Object::onSpawn()
+{
+
+}
+
+void Object::onDeath()
+{
+	delete this;
+}
+
+void Object::onDamage()
+{
+	if( m_health <= 0 ) kill();
+}
+
+void Object::onCollision( Block* block )
+{
+
+}
+
+void Object::onCollision( Object* object )
+{
+
+}
+
+bool Object::use()
+{
+	return false;
+}
+
+void Object::damage( float dmg )
+{
+	m_health -= dmg;
+	if( m_health <= 0 ) kill();
+	onDamage();
+}
+extern int xoffset2;
+extern int yoffset2;
+
+errc Object::draw( UQVA* uqva )
+{
+
+	uqva->addQuad( m_p.m_x + m_cbox.getCorner( BOTLEFT ).m_x, m_p.m_y  + m_cbox.getCorner( BOTLEFT ).m_y, m_cbox.getCorner( TOPRIGHT ).m_x - m_cbox.getCorner( BOTLEFT ).m_x,
+				   m_cbox.getCorner( TOPRIGHT ).m_y - m_cbox.getCorner( BOTLEFT ).m_y , m_texture.m_x, m_texture.m_y );
+	uqva->changeColor( sf::Color( 0, 255, 100 ), 4 );
+
 
 	return 0;
 }
+void Block::kill()
+{
 
+	m_dead = true;
+}
 
 Block::Block( int x, int y, BlockHolder* parent )
 {
-    m_vecpos=-1;
+	m_itemid = 0;
+	m_health = 100;
+	m_liquidc = 0;
+	m_dead = 0;
+	m_vecpos = -1;
 	m_parent = parent;
+
 	tw = 0;
 	m_x = x;
 	m_y = y;
 	m_phase = GAS;
-	if( y > 100 ) m_phase = LIQUID;
-	if( y > 200 ) m_phase = SOLID;
+
 }
 
 Block::~Block()
 {
-    //m_parent->removeFromHolder(getVecPos());
+	if( m_parent ) if( getVecPos() != -1 ) m_parent->removeFromHolder( getVecPos() );
+}
+
+void Block::onProcess()
+{
+
+}
+
+void Block::onSpawn()
+{
+
+}
+
+void Block::onDeath()
+{
+	if( m_phase == SOLID )
+	{
+		auto lambda = []( Point<float>& point, float angle, float tp )
+		{
+			point.m_x += cosf( angle ) * 3;
+			point.m_y += sinf( angle ) * 3;
+		} ;
+		auto clambda = []( sf::Color&, float, float ) { };
+		Object* obj = new ProjectileEmitter( getPos().m_x * Globals::BLOCKSIZE, getPos().m_y * Globals::BLOCKSIZE, sf::Color( 255, 150, 150 ), lambda, clambda );
+		Item* item = new BlockPlacer( m_itemid, m_itemtexture, m_texture );
+		ItemPickUp* ip = new ItemPickUp( m_x * Globals::BLOCKSIZE, m_y * Globals::BLOCKSIZE, m_itemtexture, item, Globals::GAME->obj_vec );
+		Globals::GAME->obj_vec->add( ip );
+		Globals::GAME->obj_vec->add( obj );
+	}
+	setPhase( GAS );
+
+	m_texture = Point<int>();
+	m_dead = false;
+}
+
+void Block::onDamage()
+{
+
 }
 
 
-errc Block::draw( sf::RenderWindow* window, int xoffset, int yoffset, int bs )
+
+bool Block::use()
+{
+	return false;
+}
+
+void Block::damage( float dmg )
+{
+	m_health -= dmg;
+	if( m_health <= 0 ) kill();
+	onDamage();
+}
+
+errc Block::draw( UQVA* uqva, int xoffsett, int yoffsett, int bs )
 {
 	if( m_phase == NONE ) return -1;
 	m_color = sf::Color( 255, 255, 255 );
-	if( m_phase == LIQUID ) m_color = sf::Color( 0, 255, 50 );
+	if( m_phase == LIQUID ) m_color = sf::Color( 111, 111, m_liquidc / 4 );
 	if( m_phase == SOLID ) m_color = sf::Color( 200, 150, 100 );
 	sf::RectangleShape rect( sf::Vector2f( bs, bs ) );
-	Rect<double> tr;
+	uqva->addQuad( ( m_x )*bs + xoffsett, ( m_y )*bs + yoffsett, bs, bs, m_texture.m_x, m_texture.m_y );
 
+	uqva->changeColor( m_color, 4 );
 
-	rect.setFillColor( m_color );
-
-	rect.setPosition( ( m_x )*bs + xoffset, yoffset + ( m_y )*bs );
-	window->draw( rect );
 	return 0;
+}
+bool Block::isDead()
+{
+	return m_dead;
 }
 
 normals Block::getAvailNormals()
@@ -424,41 +550,90 @@ normals Block::getAvailNormals()
 }
 errc Block::process()
 {
-	Block* blocks[4];
-	m_parent->getNeighbours( m_x, m_y, blocks );
-
-		for( int i = 0; i < 4; i++ )
+	if( isDead() ) onDeath();
+	onProcess();
+	Block* blk;
+	blk = m_parent->getBlock( m_x, m_y + 1 );
+	if( blk )
+	{
+		if( blk->getPhase() != SOLID  )
 		{
-			if( blocks[i] != NULL )
+			float diff = m_liquidc - blk->m_liquidc;
+			diff = diff * 0.333;
+			if( diff > 0 )
 			{
-				float tw1 = gettw();
-				float tw2 = blocks[i]->gettw();
-				float dif = tw2 - tw1;
-				dif *= 0.01;
-				settw( tw1 + dif );
-				blocks[i]->settw( tw2 - dif );
 
 
-
-
+				m_liquidc -= ( diff );
+				if( m_liquidc < 1000 ) m_liquidc -= 0.1;
+				blk->m_liquidc += diff;
 			}
+		}
+		else
+		{
+			blk = m_parent->getBlock( m_x + 1, m_y );
+			if( blk )
+				if( blk->getPhase() != SOLID )
+				{
+					float diff = m_liquidc - blk->m_liquidc;
+					diff -= diff * 0.123 / 2;
+					if( diff > 0 )
+					{
 
+
+						m_liquidc -= diff;
+						blk->m_liquidc += diff;
+					}
+				}
+			blk = m_parent->getBlock( m_x - 1, m_y );
+			if( blk )
+				if( blk->getPhase() != SOLID )
+				{
+					float diff = m_liquidc - blk->m_liquidc;
+					diff -= diff * 0.123 / 2;
+					if( diff > 0 )
+					{
+
+
+						m_liquidc -= diff;
+						blk->m_liquidc += diff;
+					}
+				}
 
 		}
+	}
+	if( m_liquidc < 100 && m_phase != SOLID ) setPhase( GAS );
+	if( m_liquidc > 100 && m_phase != SOLID ) setPhase( LIQUID );
+	//std::cout << liquidc;
 
 	return 0;
 
 
 }
-
-void Block::setVecPos(unsigned i)
+void Object::heal( float dmg )
 {
-    m_vecpos=i;
+	m_health += dmg;
+	if( m_health >= m_max_health ) m_health = m_max_health;
+	onHeal();
+}
+
+void Object::onHeal()
+{
+
+}
+
+void Block::setVecPos( unsigned i )
+{
+	m_vecpos = i;
 }
 
 const unsigned& Block::getVecPos()
 {
-    return m_vecpos;
+	return m_vecpos;
+}
+void Object::pickUp( ItemPickUp* block, Item* obj )
+{
+
 }
 
 
@@ -470,6 +645,109 @@ float Block::settw( float ntw )
 {
 	tw = ntw;
 	return tw;
+}
+
+void Block::setItemID( unsigned id )
+{
+	m_itemid = id;
+}
+
+void Block::setItemTexture( Point<int> texture )
+{
+	m_itemtexture = texture;
+}
+void Block::setTexture( Point<int> texture )
+{
+	m_texture = texture;
+}
+float Block::getLiquidCount()
+{
+	return m_liquidc;
+}
+void Block::setLiquidCount( float cnt )
+{
+	m_liquidc = cnt;
+}
+void World::saveWorld()
+{
+	if( Globals::GAME->world )
+	{
+
+		std::ofstream file;
+		file.open( "save.dat" );
+		unsigned x, y;
+		x = Globals::GAME->world->m_x;
+		y = Globals::GAME->world->m_y;
+		for( int i = 0; i < x * y; i++ )
+		{
+			Block* blk = Globals::GAME->world->getBlock( i % y, i / x );
+			if( blk->getPhase() == GAS )
+				file << 0 << " ";
+			else
+				if( blk->getPhase() == LIQUID )
+					file << 1 << " ";
+				else
+					file << 2 << " ";
+		}
+	}
+}
+
+void World::loadWorld()
+{
+	std::ifstream file;
+	file.open( "save.dat" );
+	if( !file.is_open() ) return;
+
+	CollisionObjectVector* colvec = new CollisionObjectVector( Globals::GAME );
+	ObjectVector* objvec = new ObjectVector( Globals::GAME );
+	Hero* her = new Hero( 100, 100, objvec, 10, Rect<float>() );
+	Object* obj = her;
+	obj->setPos( Point<float>( -100, -100 ) );
+	objvec->add( her );
+	colvec->add( her );
+	//Globals::GAME->movingworlds.push_back( her );
+	WorldGenerator::selectSeed( "Witam pozdrawiam" );
+	WorldGenerator::selectSize( 1000, 1000 );
+	World* wrld = WorldGenerator::generateWorld();
+	Object* tobj = Globals::GAME->object;
+	ObjectVector* tobjv = Globals::GAME->obj_vec;
+	World* tworld = Globals::GAME->world;
+	CollisionObjectVector* tcolv = Globals::GAME->col_vec;
+
+	Globals::GAME->world = 0;
+	Globals::GAME->object = 0;
+	Globals::GAME->obj_vec = 0;
+	Globals::GAME->col_vec = 0;
+
+	sf::sleep( sf::milliseconds( 10 ) );
+	Globals::WPLS = true;
+	while( !( Globals::PTR && Globals::RTR ) ) sf::sleep( sf::milliseconds( 1 ) );
+	if( tworld ) delete tworld;
+	//if( tcolv ) delete tcolv; @TODO ????
+	if( tobjv ) delete tobjv;
+	unsigned x, y;
+	file >> x >> y;
+	for( int i = 0; i < x * y; i++ )
+	{
+		Block* blk = Globals::GAME->world->getBlock( i % y, i / x );
+		int in;
+		file >> in;
+		if( in == 0 )
+			blk->setPhase( GAS );
+		else
+			if( in == 1 )
+				blk->setPhase( LIQUID );
+			else
+				blk->setPhase( SOLID );
+	}
+
+	Globals::GAME->world = wrld;
+	Globals::GAME->object = her;
+	Globals::GAME->obj_vec = objvec;
+	Globals::GAME->col_vec = colvec;
+	Globals::GAME->movingworlds.clear();
+	Globals::WPLS = false;
+	Globals::TIMEACCUMULATOR = 0;
 }
 
 

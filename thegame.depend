@@ -1,5 +1,5 @@
 # depslib dependency file v1.0
-1420225128 source:c:\projekty\thegame\main.cpp
+1422573187 source:c:\projekty\thegame\main.cpp
 	"version.h"
 	"ver_dat.h"
 	<string>
@@ -15,11 +15,22 @@
 	"counter.h"
 	"interface_menu.h"
 	"movingworld.h"
+	"test_obj.h"
+	"interfacewindow.h"
+	"worldgenerator.h"
+	"liquidifieremitter.h"
+	"datastream.h"
+	"cthulu.h"
+	"inventory.h"
+	"itempickup.h"
+	"idtoitemconversion.h"
+	"craftingmenu.h"
+	"particlesystem.h"
 	"world.h"
 	"UQVA.h"
 	"interface.h"
 
-1420235780 c:\projekty\thegame\version.h
+1422573187 c:\projekty\thegame\version.h
 
 1420163511 c:\projekty\thegame\ver_dat.h
 	"version.h"
@@ -360,27 +371,27 @@
 	<string>
 	<vector>
 
-1420163511 c:\projekty\thegame\conversion.h
+1422543643 c:\projekty\thegame\conversion.h
 	<stdlib.h>
 	<string>
 	<string.h>
 	<iostream>
 	<sstream>
 
-1415794391 c:\projekty\thegame\typedefs.h
+1422542351 c:\projekty\thegame\typedefs.h
 	<SFML/System.hpp>
 
 1420163511 c:\projekty\thegame\counter.h
 	"typedefs.h"
 
-1420163511 c:\projekty\thegame\bg.h
+1420237006 c:\projekty\thegame\bg.h
 	<iostream>
 	<SFML/Graphics.hpp>
 	"bg.cpp"
 
 1415741177 c:\projekty\thegame\macro.h
 
-1420224744 c:\projekty\thegame\world.h
+1422572347 c:\projekty\thegame\world.h
 	"globals.h"
 	"counter.h"
 	<stdlib.h>
@@ -399,15 +410,24 @@
 	"bg.h"
 	"macro.h"
 
-1420235780 source:c:\projekty\thegame\world.cpp
+1422572347 source:c:\projekty\thegame\world.cpp
 	<stdlib.h>
 	<stdio.h>
 	<random>
 	<math.h>
 	"world.h"
 	"normals.h"
+	"globals.h"
+	"uqva.h"
+	"itempickup.h"
+	"items.h"
+	"projectileemitter.h"
+	<fstream>
+	"movingworld.h"
+	"worldgenerator.h"
 
-1420163511 c:\projekty\thegame\uqva.h
+1422543642 c:\projekty\thegame\uqva.h
+	<SFML/Graphics.hpp>
 
 1420163511 c:\projekty\thegame\interface.h
 	<SFML/Graphics.hpp>
@@ -415,37 +435,183 @@
 1420163511 source:c:\projekty\thegame\interface.cpp
 	"interface.h"
 
-1420163512 c:\projekty\thegame\globals.h
+1422546114 c:\projekty\thegame\globals.h
 	<SFML/Graphics.hpp>
+	"taskqueue.h"
+	"interface.h"
+	<random>
+	<ctime>
 
-1420225128 source:c:\projekty\thegame\globals.cpp
+1422546114 source:c:\projekty\thegame\globals.cpp
 	"globals.h"
 	"bg.h"
 	"world.h"
 	"movingworld.h"
+	"interfacewindow.h"
+	"interface.h"
 
 1418885258 source:c:\projekty\thegame\interface_menu.cpp
 
-1420163512 c:\projekty\thegame\interface_menu.h
+1422543643 c:\projekty\thegame\interface_menu.h
 	"bg.h"
 
-1420163512 source:c:\projekty\thegame\normals.cpp
+1422543642 source:c:\projekty\thegame\normals.cpp
 	"normals.h"
 
-1420163512 c:\projekty\thegame\normals.h
+1420237006 c:\projekty\thegame\normals.h
 	"bg.h"
 	<SFML/Graphics.hpp>
 
-1420209602 source:c:\projekty\thegame\movingworld.cpp
+1422570865 source:c:\projekty\thegame\movingworld.cpp
 	"world.h"
 	"movingworld.h"
 	"globals.h"
+	"taskqueue.h"
+	"itempickup.h"
+	"cthulu.h"
 
-1420208562 c:\projekty\thegame\movingworld.h
+1422572347 c:\projekty\thegame\movingworld.h
 	"squaregrowingoutwards.h"
 	"world.h"
 	"counter.h"
+	"uqva.h"
+	"globals.h"
+	"inventory.h"
 
-1420208147 c:\projekty\thegame\squaregrowingoutwards.h
+1422280179 c:\projekty\thegame\squaregrowingoutwards.h
 	<iostream>
+	<vector>
+
+1422572347 source:c:\projekty\thegame\items.cpp
+	"items.h"
+	"UQVA.h"
+	"conversion.h"
+	"globals.h"
+	"world.h"
+	"projectile.h"
+	"movingworld.h"
+
+1422572347 c:\projekty\thegame\items.h
+	<vector>
+	"bg.h"
+
+1422543642 c:\projekty\thegame\test_obj.h
+	"world.h"
+
+1420319529 source:c:\projekty\thegame\test_obj.cpp
+	"test_obj.h"
+
+1422543642 source:c:\projekty\thegame\uqva.cpp
+	"uqva.h"
+	<iostream>
+
+1422543642 source:c:\projekty\thegame\worldgenerator.cpp
+	"worldgenerator.h"
+	"globals.h"
+	"world.h"
+	"conversion.h"
+
+1422543642 c:\projekty\thegame\worldgenerator.h
+	<string>
+
+1422572347 c:\projekty\thegame\interfacewindow.h
+	<vector>
+	"interface_menu.h"
+	"interface.h"
+	<SFML/Graphics.hpp>
+
+1422572347 source:c:\projekty\thegame\interfacewindow.cpp
+	"interfacewindow.h"
+	<iostream>
+	"world.h"
+	"movingworld.h"
+	"worldgenerator.h"
+
+1422543643 source:c:\projekty\thegame\liquidifieremitter.cpp
+	"liquidifieremitter.h"
+
+1422543643 c:\projekty\thegame\liquidifieremitter.h
+	"world.h"
+	"UQVA.h"
+
+1422140580 source:c:\projekty\thegame\datastream.cpp
+
+1422543643 c:\projekty\thegame\datastream.h
+	<stdlib.h>
+	<string.h>
+	<iostream>
+
+1422543642 source:c:\projekty\thegame\taskqueue.cpp
+	"taskqueue.h"
+
+1422543642 c:\projekty\thegame\taskqueue.h
+	"datastream.h"
+	<string>
+	<queue>
+
+1422572347 source:c:\projekty\thegame\cthulu.cpp
+	"cthulu.h"
+
+1422572347 c:\projekty\thegame\cthulu.h
+	"movingworld.h"
+
+1422543643 source:c:\projekty\thegame\inventory.cpp
+	"inventory.h"
+	"UQVA.h"
+
+1422543643 c:\projekty\thegame\inventory.h
+	"items.h"
+
+1422543643 source:c:\projekty\thegame\itempickup.cpp
+	"itempickup.h"
+
+1422543643 c:\projekty\thegame\itempickup.h
+	"world.h"
+
+1422572347 source:c:\projekty\thegame\craftingmenu.cpp
+	"craftingmenu.h"
+	"inventory.h"
+	"items.h"
+	"UQVA.h"
+	"idtoitemconversion.h"
+	"globals.h"
+	"movingworld.h"
+
+1422572347 c:\projekty\thegame\craftingmenu.h
+	<vector>
+	"interfacewindow.h"
+	<SFML/Graphics.hpp>
+
+1422572347 source:c:\projekty\thegame\idtoitemconversion.cpp
+	"idtoitemconversion.h"
+	"items.h"
+	"globals.h"
+	<random>
+	<functional>
+
+1422543642 c:\projekty\thegame\idtoitemconversion.h
+
+1422572347 source:c:\projekty\thegame\particlesystem.cpp
+	"particlesystem.h"
+	"globals.h"
+	"UQVA.h"
+
+1422572347 c:\projekty\thegame\particlesystem.h
+	"bg.h"
+	<SFML/Graphics.hpp>
+
+1422572347 source:c:\projekty\thegame\projectile.cpp
+	"projectile.h"
+	"UQVA.h"
+
+1422572347 c:\projekty\thegame\projectile.h
+	"world.h"
+
+1422572347 source:c:\projekty\thegame\projectileemitter.cpp
+	"projectileemitter.h"
+	"globals.h"
+
+1422572347 c:\projekty\thegame\projectileemitter.h
+	"particlesystem.h"
+	"world.h"
 

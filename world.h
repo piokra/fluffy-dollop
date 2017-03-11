@@ -8,6 +8,7 @@
 #include "bg.h"
 #include "normals.h"
 
+class UQVA;
 
 
 
@@ -47,23 +48,25 @@ class Block : public Counter<Block>
 {
 public:
 	friend class World;
+	friend class Block;
+	friend class BlockPlacer;
 	Block( int x, int y, BlockHolder* parent );
 	virtual ~Block();
-	virtual errc draw( sf::RenderWindow* rw, int, int, int );
+	virtual errc draw( UQVA*, int, int, int );
 	virtual errc process();
 	Phase getPhase()
 	{
 		return m_phase;
 	}
-	Point<double> getPos()
+	Point<float> getPos()
 	{
-		return Point<double>( m_x, m_y );
+		return Point<float>( m_x, m_y );
 	}
-	virtual Rect<double> getCbox()
+	virtual Rect<float> getCbox()
 	{
 
-		return Rect<double>( Point<double>( m_x * Globals::BLOCKSIZE, m_y * Globals::BLOCKSIZE ), Point<double>( m_x * Globals::BLOCKSIZE + Globals::BLOCKSIZE,
-							 m_y * Globals::BLOCKSIZE + Globals::BLOCKSIZE ) );
+		return Rect<float>( Point<float>( m_x * Globals::BLOCKSIZE, m_y * Globals::BLOCKSIZE ), Point<float>( m_x * Globals::BLOCKSIZE + Globals::BLOCKSIZE,
+							m_y * Globals::BLOCKSIZE + Globals::BLOCKSIZE ) );
 	}
 	void setPhase( Phase phase )
 	{
@@ -77,25 +80,51 @@ public:
 	float gettw();
 	float settw( float ntw );
 	Phase m_phase;
-	virtual Vector2<double> getVelocity()
+	virtual Vector2<float> getVelocity()
 	{
-		return Vector2<double>( 0, 0 );
+		return Vector2<float>( 0, 0 );
 	};
-	virtual void addVelocity( Vector2<double> ) { };
-	virtual double getInvMass()
+	virtual void addVelocity( Vector2<float> ) { };
+	virtual float getInvMass()
 	{
 		return 0;
 	};
+	virtual void onProcess();
+	virtual void onSpawn();
+	virtual void onDeath();
+	virtual void onDamage();
+	virtual void onCollision( Object* obj );
+	virtual void onCollision( Block* block );
+	virtual bool isDead();
+	virtual bool use();
+	virtual void  kill();
+	virtual void damage( float dmg );
+	virtual unsigned getID();
+	void setLiquidCount( float cnt );
+	float getLiquidCount();
+
+
+
 protected:
 	void setVecPos( unsigned i );
 	const unsigned& getVecPos();
+	void setItemID( unsigned id );
+	void setItemTexture( Point<int> texture );
+	virtual void setTexture( Point<int> texture );
+
 private:
+	float m_liquidc;
+	float m_health;
+	bool m_dead;
 	sf::Color m_color;
 	int m_x;
 	int m_y;
 	unsigned m_vecpos;
 	float tw;
 	BlockHolder* m_parent;
+	Point<int> m_texture;
+	Point<int> m_itemtexture;
+	unsigned m_itemid;
 
 
 };
@@ -114,7 +143,7 @@ public:
 	{
 
 	};
-	virtual const std::vector<Object*>* objectsInRange( Point<double> pos, double r )
+	virtual const std::vector<Object*>* objectsInRange( Point<float> pos, float r )
 	{
 		return NULL;
 	}; // use sparingly
@@ -122,7 +151,7 @@ public:
 	{
 		return -1;
 	};
-	virtual errc draw( sf::RenderWindow* )
+	virtual errc draw( UQVA* )
 	{
 		return -1;
 	};
@@ -170,7 +199,7 @@ public:
 	{
 		std::cout << "BH::getParent\n";
 	};
-	virtual std::vector<Block*>* getCollision( Rect<double> rect )
+	virtual std::vector<Block*>* getCollision( Rect<float> rect )
 	{
 		std::cout << "BH::getCollision\n";
 	};
@@ -188,21 +217,25 @@ public:
 class World : public BlockHolder
 {
 public:
+	friend World;
 	World( Game* parent, ui x, ui y );
 	~World();
 	virtual Block* getBlock( int x, int y );
-	errc draw( sf::RenderWindow* rw, int, int, int, int, int );
+	errc draw( UQVA*, int, int, int, int, int );
 	errc process( int, int, int, int );
 	std::vector<Block*>* getCollision( Object* obj );
 	Game* getParent()
 	{
 		return m_parent;
 	}
-	virtual std::vector<Block*>* getCollision( Rect<double> rect );
-	virtual std::vector<Block*>* getCollision( std::vector<Block*>* t_bl, Rect<double> rect );
+
+	virtual std::vector<Block*>* getCollision( Rect<float> rect );
+	virtual std::vector<Block*>* getCollision( std::vector<Block*>* t_bl, Rect<float> rect );
 	virtual Block** getNeighbours( int x, int y, Block** buffer );
 	virtual void removeFromHolder( unsigned pos );
 	virtual void addToHolder( Block* block, unsigned x, unsigned y );
+	static void saveWorld();
+	static void loadWorld();
 protected:
 	std::vector<Block*>* getMtbl();
 private:
@@ -212,43 +245,53 @@ private:
 	int m_x;
 	int m_y;
 };
-
+class Item;
+class ItemPickUp;
 class Object : public Counter<Object>
 {
 public:
+	friend class CollisionObjectVector;
 	friend class ObjectVector;
 	friend class Object;
 	friend class Hero;
-	Object( int x, int y, ObjectHolder* parent, double mass, Rect<double> bounds )
+	friend class MeleeWeapon;
+	Object( int x, int y, ObjectHolder* parent, float mass, Rect<float> bounds )
 	{
-	    m_holderpos=-1;
-		m_acceleration = Vector2<double>( 0, 0 );
-		m_velocity = Vector2<double>( 0, 0 );
-		m_p = Point<double>( x, y );
+		m_max_health = 100;
+		m_health = 100;
+		m_dead = 0;
+		m_holderpos = -1;
+		m_acceleration = Vector2<float>( 0, 0 );
+		m_velocity = Vector2<float>( 0, 0 );
+		m_p = Point<float>( x, y );
 		m_parent = parent;
 		m_cbox = bounds;
 		m_mass = mass;
-		m_invmass = 1 / mass;
+		m_invmass = 0;
+		if( m_mass )
+			m_invmass = 1 / mass;
+		m_cparent = 0;
 
 
 	};
 	virtual ~Object()
 	{
-        m_parent->removeFromPos(getHolderPos());
+		m_parent->removeFromPos( getHolderPos() );
+		if( m_cparent ) m_cparent->removeFromPos( getCVPos() );
 	};
-	virtual errc draw( sf::RenderWindow* window );
+	virtual errc draw( UQVA* uqva );
 
 	virtual errc process();
 
-	Point<double> getPos()
+	const Point<float>& getPos()
 	{
 		return m_p;
 	};
-	void setPos( Point<double> a )
+	void setPos( Point<float> a )
 	{
 		m_p = a;
 	};
-	Rect<double> getCbox()
+	Rect<float> getCbox()
 	{
 		return m_cbox + m_p;
 	}
@@ -258,26 +301,31 @@ public:
 	}
 	virtual int isColliding( Block* block );
 
-	virtual void addForce( Vector2<double> force )
+	virtual void addForce( Vector2<float> force )
 	{
 		m_force = m_force + force;
 	}
 
-	virtual Vector2<double> getVelocity()
+	virtual Vector2<float> getVelocity()
 	{
 		return m_velocity;
 	}
-	virtual Point<double> getPreviousPos()
+	virtual Point<float> getPreviousPos()
 	{
 		return m_pp;
 	}
-	virtual void addVelocity( Vector2<double> vel )
+	virtual void addVelocity( Vector2<float> vel )
 	{
 		m_velocity = m_velocity + vel;
 	}
-	int inrange;
-
+	virtual unsigned getID();
+	virtual void pickUp( ItemPickUp* block, Item* obj );
+	virtual void damage( float dmg );
 protected:
+	virtual void setParent( ObjectHolder* holder )
+	{
+		m_parent = holder;
+	}
 	virtual bool resolveCollision();
 	virtual void countAcceleration()
 	{
@@ -286,8 +334,8 @@ protected:
 	virtual void addAcceleration();
 	virtual void processPhysics()
 	{
-		addForce( Vector2<double>( 0, 1 * m_mass ) );
-		Vector2<double> tvel = getVelocity();
+		addForce( Vector2<float>( 0, 1 * m_mass ) );
+		Vector2<float> tvel = getVelocity();
 		tvel.m_p.m_x = -( 0.01 ) * ( tvel.m_p.m_x * tvel.m_p.m_x ) * sign( tvel.m_p.m_x );
 		tvel.m_p.m_y = -( 0.01 ) * ( tvel.m_p.m_y * tvel.m_p.m_y ) * sign( tvel.m_p.m_y );
 		tvel = tvel * m_mass;
@@ -295,7 +343,7 @@ protected:
 	};
 	virtual void applyVelocity();
 
-	virtual void move( Vector2<double> vec )
+	virtual void move( Vector2<float> vec )
 	{
 		m_p = m_p + vec;
 	}
@@ -303,27 +351,71 @@ protected:
 
 	virtual void resolveObjectCollision();
 
-	virtual void resolvePartialBlockCollision( Rect<double> cbox, Point<double> );
+	virtual void resolvePartialBlockCollision( Rect<float> cbox, Point<float> );
 
-	virtual void resolvePartialObjectCollision( Rect<double> cbox, Point<double> );
+	virtual void resolvePartialObjectCollision( Rect<float> cbox, Point<float> );
 	void setHolderPos( unsigned pos );
 	const unsigned& getHolderPos();
+	const unsigned& getCVPos();
+	void setCVPos ( unsigned pos );
+	void setCParent( ObjectHolder* cparent );
+	ObjectHolder* getCVparent();
+	ObjectHolder* getParent()
+	{
+		return m_parent;
+	}
+	void setTexture( Point<int> texturexy )
+	{
+		m_texture = texturexy;
+	}
+	virtual void onProcess();
+	virtual void onSpawn();
+	virtual void onDeath();
+	virtual void onDamage();
+	virtual void onCollision( Object* obj );
+	virtual void onCollision( Block* block );
+
+
+	virtual bool use();
+
+
+	virtual bool isDead();
+	virtual void kill();
+
+	virtual void setMaxHealth( float maxh )
+	{
+		m_max_health = maxh;
+	};
+	virtual void heal( float dmg );
+	virtual void onHeal();
+
+
+	;
 private:
 	unsigned m_holderpos;
-	Rect<double> m_cbox;
+	Rect<float> m_cbox;
 	ObjectHolder* m_parent;
-	double m_mass;
-	double m_invmass;
-	Point<double> m_p;
-	Point<double> m_pp;
-	Vector2<double> m_velocity;
-	Vector2<double> m_acceleration;
-	Vector2<double> m_force;
+	ObjectHolder* m_cparent;
+	float m_mass;
+	float m_invmass;
+	Point<float> m_p;
+	Point<float> m_pp;
+	Vector2<float> m_velocity;
+	Vector2<float> m_acceleration;
+	Vector2<float> m_force;
+	Point<int> m_texture;
+	float m_health;
+	float m_max_health;
+
+
+	unsigned m_cvpos;
+	bool m_dead;
 };
 
 
 class ObjectVector : public ObjectHolder
 {
+
 public:
 	ObjectVector( Game* parent ): ObjectHolder( parent )
 	{
@@ -332,13 +424,13 @@ public:
 	virtual errc process ()
 	{
 
-			for( int i = 0; i < m_objects.size(); i++ )
-			{
-				if( m_objects.at( i ) != NULL ) m_objects.at( i )->process();
-			}
+		for( int i = 0; i < m_objects.size(); i++ )
+		{
+			if( m_objects.at( i ) != NULL ) m_objects.at( i )->process();
+		}
 		return 0;
 	};
-	virtual errc draw( sf::RenderWindow* window )
+	virtual errc draw( UQVA* window )
 	{
 		for( int i = 0; i < m_objects.size(); i++ )
 		{
@@ -349,15 +441,16 @@ public:
 	virtual errc add( Object* obj )
 	{
 		m_objects.push_back( obj );
-		obj->setHolderPos( m_objects.size() - 1 );
+		( obj->*getSetParentFunction() )( this );
+		( obj->*getSetPosFunction() )( m_objects.size() - 1 );
 		return 0;
 	};
-	virtual std::vector<Object*>* objectsInRange( Point<double> center, double r )
+	virtual std::vector<Object*>* objectsInRange( Point<float> center, float r )
 	{
 		m_t_obj.clear();
 		r = r * r;
-		Point<double> tc;
-		double dc = 0;
+		Point<float> tc;
+		float dc = 0;
 		for( int i = 0; i < m_objects.size(); i++ )
 		{
 			if( m_objects.at( i ) != NULL )
@@ -367,7 +460,7 @@ public:
 				if ( dc <= r )
 				{
 					m_t_obj.push_back( m_objects.at( i ) );
-					m_objects.at( i )->inrange = 1;
+
 				}
 			}
 
@@ -377,7 +470,7 @@ public:
 	}
 	virtual void removeFromPos( unsigned pos )
 	{
-	    if (pos==-1) return;
+		if ( pos == -1 ) return;
 		Object* t = m_objects.at( pos );
 		m_objects.at( pos ) = m_objects.at( m_objects.size() - 1 );
 		if ( m_objects.at( pos ) ) m_objects.at( pos )->setHolderPos( pos );
@@ -385,15 +478,86 @@ public:
 	};
 	virtual ~ObjectVector()
 	{
-		for( unsigned i = 0; i < m_objects.size(); i++ ) if ( m_objects.at( i ) != 0 ) delete m_objects.at( i );
-	};
+		unsigned vsize = m_objects.size();
+		while( vsize-- ) if ( m_objects.at( 0 ) != 0 ) deleteFromPos( 0 );
+	}
+
 protected:
+	typedef const unsigned& ( Object::*HolderGetPosFunction )();
+	typedef void ( Object::*HolderSetPosFunction )( unsigned );
+	typedef ObjectHolder* ( Object::*HolderGetParentFunction )();
+	typedef void ( Object::*HolderSetParentFunction )( ObjectHolder* );
+
+	virtual HolderSetPosFunction getSetPosFunction()
+	{
+		return &Object::setHolderPos;
+	}
+	virtual HolderGetPosFunction getGetPosFunction()
+	{
+		return &Object::getHolderPos;
+	}
+	virtual HolderGetParentFunction getGetParentFunction()
+	{
+		return &Object::getParent;
+	}
+	virtual HolderSetParentFunction getSetParentFunction()
+	{
+		return &Object::setParent;
+	}
+	virtual void deleteFromPos( unsigned pos )
+	{
+		delete m_objects.at( pos );
+	}
+
 private:
 
 	std::vector<Object*> m_objects;
 	std::vector<Object*> m_t_obj;
 };
 
+class CollisionObjectVector : public ObjectVector
+{
+
+public:
+
+	CollisionObjectVector( Game* game ) : ObjectVector( game )
+	{
+
+	}
+	virtual ~CollisionObjectVector()
+	{
+
+	}
+protected:
+	virtual HolderSetPosFunction getSetPosFunction()
+	{
+		return &Object::setCVPos;
+
+
+	}
+	virtual HolderGetPosFunction getGetPosFunction()
+	{
+		return &Object::getCVPos;
+
+	}
+	virtual HolderGetParentFunction getGetParentFunction()
+	{
+		return &Object::getCVparent;
+
+	}
+	virtual HolderSetParentFunction getSetParentFunction()
+	{
+		return &Object::setCParent;
+
+	}
+	virtual void deleteFromPos( unsigned pos )
+	{
+
+	}
+private:
+
+
+};
 
 
 

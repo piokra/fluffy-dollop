@@ -14,9 +14,9 @@ public:
 	Point( T x, T y );
 	~Point();
 
-	operator Point<double>()
+	operator Point<float>()
 	{
-		return Point<double>( ( double )m_x, ( double )m_y );
+		return Point<float>( ( float )m_x, ( float )m_y );
 	};
 
 	operator Point<int>()
@@ -75,9 +75,9 @@ public:
 	{
 		return Vector2<T>( m_p * a );
 	};
-	operator Vector2<double>()
+	operator Vector2<float>()
 	{
-		return Vector2<double>( ( Point<double> )m_p );
+		return Vector2<float>( ( Point<float> )m_p );
 	}
 
 protected:
@@ -174,7 +174,7 @@ public:
 	};
 
 
-	double getIntersection( ParamLine<T> line )
+	float getIntersection( ParamLine<T> line )
 	{
 
 		/*
@@ -198,27 +198,27 @@ public:
 		    t2 = Wt2/W
 
 		*/
-		double v1x = ( double )m_vector.m_p.m_x;
-		double v1y = ( double )m_vector.m_p.m_y;
-		double o1x = ( double )m_orgin.m_x;
-		double o1y = ( double )m_orgin.m_y;
+		float v1x = ( float )m_vector.m_p.m_x;
+		float v1y = ( float )m_vector.m_p.m_y;
+		float o1x = ( float )m_orgin.m_x;
+		float o1y = ( float )m_orgin.m_y;
 
 
 
-		double v2x = line.m_vector.m_p.m_x;
-		double v2y = line.m_vector.m_p.m_y;
-		double o2x = line.m_orgin.m_x;
-		double o2y = line.m_orgin.m_y;
+		float v2x = line.m_vector.m_p.m_x;
+		float v2y = line.m_vector.m_p.m_y;
+		float o2x = line.m_orgin.m_x;
+		float o2y = line.m_orgin.m_y;
 
-		double W = v2x * v1y - v1x * v2y;
+		float W = v2x * v1y - v1x * v2y;
 		if ( W > -0.01 && W < 0.01 )
 		{
 			return -1;
 		}
-		double Wt2 = v1x * ( o2y - o1y ) - v1y * ( o2x - o1x );
-		double Wt1 = v2x * ( o2y - o1y ) - v2y * ( o2x - o1x );
-		double t1 = Wt1 / W;
-		double t2 = Wt2 / W;
+		float Wt2 = v1x * ( o2y - o1y ) - v1y * ( o2x - o1x );
+		float Wt1 = v2x * ( o2y - o1y ) - v2y * ( o2x - o1x );
+		float t1 = Wt1 / W;
+		float t2 = Wt2 / W;
 
 		if( t2 >= 0 && t2 <= 1 ) return t1;
 		return -1;

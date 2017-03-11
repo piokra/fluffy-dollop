@@ -9,7 +9,7 @@
 			<Target title="Debug">
 				<Option output="../thegame_bin/Debug/thegame" prefix_auto="1" extension_auto="1" />
 				<Option object_output="../thegame_bin/Debug/obj" />
-				<Option type="1" />
+				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
 					<Add option="-std=c++11" />
@@ -20,10 +20,9 @@
 			<Target title="Release">
 				<Option output="../thegame_bin/Release/thegame" prefix_auto="1" extension_auto="1" />
 				<Option object_output="C:/projekty/thegame_bin/Release/obj" />
-				<Option type="1" />
+				<Option type="0" />
 				<Option compiler="gcc" />
 				<Compiler>
-					<Add option="-march=corei7" />
 					<Add option="-fexpensive-optimizations" />
 					<Add option="-O3" />
 					<Add option="-Wnon-virtual-dtor" />
@@ -47,6 +46,7 @@
 			<Add directory="C:/lib/sfml/lib" />
 			<Add directory="C:/lib/sfml/bin" />
 		</Linker>
+		<Unit filename="UQVA.cpp" />
 		<Unit filename="UQVA.h" />
 		<Unit filename="bg.cpp">
 			<Option compile="0" />
@@ -55,24 +55,54 @@
 		<Unit filename="bg.h" />
 		<Unit filename="conversion.h" />
 		<Unit filename="counter.h" />
+		<Unit filename="craftingmenu.cpp" />
+		<Unit filename="craftingmenu.h" />
+		<Unit filename="cthulu.cpp" />
+		<Unit filename="cthulu.h" />
+		<Unit filename="datastream.cpp" />
+		<Unit filename="datastream.h" />
 		<Unit filename="globals.cpp" />
 		<Unit filename="globals.h" />
+		<Unit filename="idtoitemconversion.cpp" />
+		<Unit filename="idtoitemconversion.h" />
 		<Unit filename="interface.cpp" />
 		<Unit filename="interface.h" />
 		<Unit filename="interface_menu.cpp" />
 		<Unit filename="interface_menu.h" />
+		<Unit filename="interfacewindow.cpp" />
+		<Unit filename="interfacewindow.h" />
+		<Unit filename="inventory.cpp" />
+		<Unit filename="inventory.h" />
+		<Unit filename="itempickup.cpp" />
+		<Unit filename="itempickup.h" />
+		<Unit filename="items.cpp" />
+		<Unit filename="items.h" />
+		<Unit filename="liquidifieremitter.cpp" />
+		<Unit filename="liquidifieremitter.h" />
 		<Unit filename="macro.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="movingworld.cpp" />
 		<Unit filename="movingworld.h" />
 		<Unit filename="normals.cpp" />
 		<Unit filename="normals.h" />
+		<Unit filename="particlesystem.cpp" />
+		<Unit filename="particlesystem.h" />
+		<Unit filename="projectile.cpp" />
+		<Unit filename="projectile.h" />
+		<Unit filename="projectileemitter.cpp" />
+		<Unit filename="projectileemitter.h" />
 		<Unit filename="squaregrowingoutwards.h" />
+		<Unit filename="taskqueue.cpp" />
+		<Unit filename="taskqueue.h" />
+		<Unit filename="test_obj.cpp" />
+		<Unit filename="test_obj.h" />
 		<Unit filename="typedefs.h" />
 		<Unit filename="ver_dat.h" />
 		<Unit filename="version.h" />
 		<Unit filename="world.cpp" />
 		<Unit filename="world.h" />
+		<Unit filename="worldgenerator.cpp" />
+		<Unit filename="worldgenerator.h" />
 		<Extensions>
 			<code_completion />
 			<envvars />

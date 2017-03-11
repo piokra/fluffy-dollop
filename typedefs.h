@@ -4,7 +4,7 @@
 #include <SFML/System.hpp>
 
 typedef unsigned int ui;
-typedef sf::Int8 errc;
+typedef unsigned char  errc;
 
 
 

@@ -1,4 +1,10 @@
 //Universal Quad Vertex array
+#ifndef UQVA_H
+#define UQVA_H
+#include <SFML/Graphics.hpp>
+
+
+
 
 #ifndef M_PI
 #define M_PI 3.14159265359
@@ -35,133 +41,14 @@ public:
 
 		target.draw( m_vertices, states );
 	}
+	void addText( float x, float y, std::string text, float scale );
+	int vertice_count;
 private:
 	sf::VertexArray m_vertices;
-	int vertice_count;
+
 	sf::Texture *texture;
 
 
 };
 
-void UQVA::addQuad( float x, float y, float x_size, float y_size, float texture_x, float texture_y, float x_offset, float y_offset )
-{
-	m_vertices.resize( m_vertices.getVertexCount() + 4 );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + 0, 0 + y );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0, texture_y + 0 );
-	vertice_count++;
-	m_vertices[vertice_count].position = sf::Vector2f( x + x_size, 0 + y );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0 + x_size, texture_y + 0 );
-	vertice_count++;
-	m_vertices[vertice_count].position = sf::Vector2f( x + x_size + x_offset, y_size + y_offset + y );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_size + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-	m_vertices[vertice_count].position = sf::Vector2f( x + x_offset, y_size + y_offset + y );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-}
-
-void UQVA::changeColor( sf::Color color, int32_t count )
-{
-	for( int i = 0; i < std::min( count, vertice_count ); i++ )
-	{
-		m_vertices[vertice_count - i - 1].color = color;
-	}
-}
-
-void UQVA::addQuad( float x, float y, float x_size, float y_size, float texture_x, float texture_y, float x_offset, float y_offset, float rotation_angle_radian )
-{
-
-	m_vertices.resize( m_vertices.getVertexCount() + 4 );
-
-	float angle, xchange, ychange, d;
-
-
-	d = sqrtf( x_size * x_size + y_size * y_size );
-	d = d / 4;
-
-	angle = rotation_angle_radian;
-
-	xchange = d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0, texture_y + 0 );
-	vertice_count++;
-
-	angle = rotation_angle_radian + M_PI / 2;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0 + x_size, texture_y + 0 );
-	vertice_count++;
-
-	angle = rotation_angle_radian + M_PI;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_size + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-
-	angle = rotation_angle_radian + 3 * M_PI / 2;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-}
-void UQVA::addQuad( float x, float y, float x_size, float y_size, float texture_x, float texture_y, float x_offset, float y_offset, float rotation_angle_radian, float size )
-{
-
-	m_vertices.resize( m_vertices.getVertexCount() + 4 );
-
-	float angle, xchange, ychange, d;
-
-
-	d = sqrtf( x_size * x_size + y_size * y_size ) * size;
-	d = d / 4;
-
-	angle = rotation_angle_radian;
-
-	xchange = d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0, texture_y + 0 );
-	vertice_count++;
-
-	angle = rotation_angle_radian + M_PI / 2;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + 0 + x_size, texture_y + 0 );
-	vertice_count++;
-
-	angle = rotation_angle_radian + M_PI;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_size + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-
-	angle = rotation_angle_radian + 3 * M_PI / 2;
-	xchange =  d * cosf( angle );
-	ychange = d * sinf( angle );
-
-	m_vertices[vertice_count].position = sf::Vector2f( x + xchange + 0 + xchange, 0 + y + ychange + ychange );
-	m_vertices[vertice_count].texCoords = sf::Vector2f( texture_x + x_offset, y_size + y_offset + texture_y );
-	vertice_count++;
-}
-UQVA::UQVA()
-{
-	texture = NULL;
-	vertice_count = 0;
-	m_vertices.clear();
-	m_vertices.resize( 0 );
-	m_vertices.setPrimitiveType( sf::Quads );
-}
+#endif // UQVA_H

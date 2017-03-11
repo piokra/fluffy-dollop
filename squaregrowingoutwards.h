@@ -2,6 +2,7 @@
 #define SQUAREGROWINGOUTWARDS_H
 
 #include <iostream>
+#include <vector>
 
 template <class T>
 class SquareGrowingOutwards
